@@ -1,44 +1,44 @@
+→Conda environments 
 ------------------------------------------------------------------------------------------------
-Conda environments 
-------------------------------------------------------------------------------------------------
 
-→Installing Conda/Miniconda
+    →Installing Conda/Miniconda
 
-    //docs.conda.io/en/latest/
+        //docs.conda.io/en/latest/
 
-→Create environments
+    →Create environments
 
-    conda create -n <env-name>
-    #conda create -n env1
+        conda create -n <env-name>
+        #conda create -n env1
 
-→List of environments
+    →List of environments
 
-    conda info --envs
+        conda info --envs
 
-→Location
+    →Location
 
-    base:  /home/username/Anaconda3
-    <env-name>:   /home/username/Anaconda3/envs/<env-name>
-    #env1:   /home/username/Anaconda3/envs/env1
+        base:  /home/username/Anaconda3
+        <env-name>:   /home/username/Anaconda3/envs/<env-name>
+        #env1:   /home/username/Anaconda3/envs/env1
 
-→Activation/Deactivation 
+    →Activation/Deactivation 
 
-    conda activate <env-name>
-    #conda activate env1
+        conda activate <env-name>
+        #conda activate env1
 
-    conda activate
-    #Return base environment
+        conda activate
+        #Return base environment
 
-    conda deactivate
-    #current environment
+        conda deactivate
+        #current environment
 
-→Versión
+    →Versión
 
-    conda --version
-    conda update conda
+        conda --version
+        conda update conda
 
 ------------------------------------------------------------------------------------------------
-Quality control
+
+→Quality control
 ------------------------------------------------------------------------------------------------
 
 →Installing fastqc and multiqc 
