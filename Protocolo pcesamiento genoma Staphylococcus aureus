@@ -1,0 +1,216 @@
+------------------------------------------------------------------------------------------------
+Conda environments 
+------------------------------------------------------------------------------------------------
+
+→Installing Conda/Miniconda
+
+    //docs.conda.io/en/latest/
+
+→Create environments
+
+    conda create -n <env-name>
+    #conda create -n env1
+
+→List of environments
+
+    conda info --envs
+
+→Location
+
+    base:  /home/username/Anaconda3
+    <env-name>:   /home/username/Anaconda3/envs/<env-name>
+    #env1:   /home/username/Anaconda3/envs/env1
+
+→Activation/Deactivation 
+
+    conda activate <env-name>
+    #conda activate env1
+
+    conda activate
+    #Return base environment
+
+    conda deactivate
+    #current environment
+
+→Versión
+
+    conda --version
+    conda update conda
+
+------------------------------------------------------------------------------------------------
+Quality control
+------------------------------------------------------------------------------------------------
+
+→Installing fastqc and multiqc 
+
+    conda activate env1
+    conda install -c conda-forge -c bioconda fastqc 
+    conda install -c conda-forge -c bioconda multiqc
+
+→Locate raw files
+
+    /home/username/fastq_raw_files
+    #<R1_Seq>.fastq.gz
+    #<R2_Seq>.fastq.gz
+
+→Initial quality control check
+
+    fastqc <R1_Seq>.fastq.gz
+    fastqc <R2_Seq>.fastq.gz
+
+    multiqc <R1_Seq>_fastqc.zip <R2_Seq>_fastqc.zip
+    #check file multiqc_report.html 
+
+    md5sum -c md5sum.txt
+    #check integrity files
+
+→Installing Trimmmomatic
+
+    conda install -c conda-forge -c bioconda trimmomatic 
+
+→Searching for adapters
+
+    ls -l Downloads/Trimmomatic-0.39/adapters/
+    cp Downloads/Trimmomatic-0.39/adapters/NexteraPE-PE.fa .
+    #copy adapters file to work folder
+
+→Run Trimmomatic
+
+    java -jar Downloads/Trimmomatic-0.39/trimmomatic-0.39.jar PE <R1_Seq>.fastq.gz <R2_Seq>.fastq.gz -threads 8 -baseout <Trimmed>.fastq.gz ILLUMINACLIP:NexteraPE-PE.fa:2:30:10 LEADING:20 TRAILING:20 SLIDINGWINDOW:10:30 MINLEN:50 AVGQUAL:25
+
+→Create folder for trimmed files
+
+    mkdir fastq_trimmed
+    #/home/username/fastq_trimmed
+
+    mv <1P>.fastq.gz <1U>.fastq.gz <2P>.fastq.gz <2U>.fastq.gz /home/username/fastq_trimmed
+    #cp <1P>.fastq.gz <1U>.fastq.gz <2P>.fastq.gz <2U>.fastq.gz /home/username/fastq_trimmed
+
+    #<1P>.fastq.gz <1U>.fastq.gz
+    #pair 1 paired and unpaired respectively
+    #<2P>.fastq.gz <2U>.fastq.gz
+    #pair 2 paired and unpaired respectively
+
+→Performing new quality control check
+
+    fastqc <Trimmed>_1P.fastq.gz
+    fastqc <Trimmed>_2P.fastq.gz
+    multiqc <Trimmed>_1P_fastqc.zip <Trimmed>_2_2P_fastqc.zip
+
+------------------------------------------------------------------------------------------------
+Genome Assambly 
+------------------------------------------------------------------------------------------------
+
+→Installing Kmergenie for Velvet assambly 
+
+    conda activate env1
+    conda install -n env1 -c conda-forge -c bioconda kmergenie readfq
+    #installing dependencies 
+
+    sudo apt-get install build-essential
+    wget http://kmergenie.bx.psu.edu/kmergenie-1.7051.tar.gz
+    tar xfz kmergenie-1.7051.tar.gz
+    cd kmergenie-1.7051
+    make
+    python setup.py install --user
+    #installing from source code
+
+→Run Kmergenie
+
+    ./kmergenie /home/username/fastq_trimmed/<Trimmed>_1P.fastq.gz
+    #Can select both <Trimmed>_1P.fastq.gz or <Trimmed>_2P.fastq.gz
+
+→Installing genomes assemblers
+
+    conda activate env1
+    conda install -c conda-forge -c bioconda velvet
+    conda install -c conda-forge -c bioconda unicycler
+    conda install -c conda-forge -c bioconda soapdenovo2
+
+→Perform Velvet assambly
+
+    velveth velvet.k<kmer_value> <kmer_value> -shortPaired -separate -fastq <Trimmed>_1P.fastq.gz <Trimmed>_2P.fastq.gz
+    velvetg velvet.k<kmervalue> -exp_cov auto -cov_cutoff auto
+    
+→Perform Unicycler assambly
+
+    unicycler -t 8 --mode normal -1 <Trimmed>_1P.fastq.gz -2 <Trimmed>_2P.fastq.gz -o unicycler.default
+
+→Perform SOAPdenovo assambly
+
+    nano SOAP.conf 
+
+        # maximal read length
+        max_rd_len=150
+
+        [LIB]
+        # average insert size
+        avg_ins=450
+
+        # if sequence needs to be
+        reversed reverse_seq=0
+
+        # in which part(s) the reads are used
+        asm_flags=3
+
+        # use only first 50 bps of each read
+        rd_len_cutoff=150
+
+        # in which order the reads are used while scaffolding
+        rank=1
+
+        # cutoff of pair number for a reliable connection (default 3)
+        pair_num_cutoff=3
+
+        # minimum aligned length to contigs for a reliable read location (default 32)
+        map_len=32
+
+        # fastq file for read 1
+        q1=<Trimmed>_1P.fastq.gz
+
+        # fastq file for read 2 always follows fastq file for read 1
+        q2=<Trimmed>_2P.fastq.gz
+
+    #save file
+
+    SOAPdenovo-127mer all -s SOAP.conf -p 12 -K <kmer_value> -R -o soap.K<kmer_value>
+
+    mkdir soap.k<kmer_value>
+    mv soap.K<kmer_value>* soap.k<kmer_value>
+
+ →Acquire assembly quality metrics
+
+    wget https://github.com/jomaldon/scripts_bioinfo/raw/master/N50_line.v2.pl
+    chmod 777 N50_line.v2.pl
+    mkdir ~/bin
+    mv N50_line.v2.pl ~/bin
+
+    N50_line.v2.pl contigs.fa
+    find . -name contigs.fa | xargs -I {} N50_line.v2.pl {}
+    #velvet
+
+    50_line.v2.pl assembly.fasta
+    #Unicycler
+
+    N50_line.v2.pl soap.K<kmer_value>.scafSeq
+    #SOAPdenovo
+
+------------------------------------------------------------------------------------------------
+Genome Annotation 
+------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
