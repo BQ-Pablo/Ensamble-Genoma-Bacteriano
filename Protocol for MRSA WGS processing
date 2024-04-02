@@ -99,10 +99,10 @@
 
 #------------------------------------------------------------------------------------------------
 
-#Genome Assambly 
+#Genome Assembly 
 #------------------------------------------------------------------------------------------------
 
-    #Installing Kmergenie for Velvet assambly 
+    #Installing Kmergenie for Velvet assembly 
 
         conda activate env1
         conda install -n env1 -c conda-forge -c bioconda kmergenie readfq
@@ -128,16 +128,16 @@
         conda install -c conda-forge -c bioconda unicycler
         conda install -c conda-forge -c bioconda soapdenovo2
 
-    #Perform Velvet assambly
+    #Perform Velvet assembly
 
         velveth velvet.k<kmer_value> <kmer_value> -shortPaired -separate -fastq <Trimmed>_1P.fastq.gz <Trimmed>_2P.fastq.gz
         velvetg velvet.k<kmervalue> -exp_cov auto -cov_cutoff auto
     
-    #Perform Unicycler assambly
+    #Perform Unicycler assembly
 
         unicycler -t 8 --mode normal -1 <Trimmed>_1P.fastq.gz -2 <Trimmed>_2P.fastq.gz -o unicycler.default
 
-    #Perform SOAPdenovo assambly
+    #Perform SOAPdenovo assembly
 
         nano SOAP.conf 
 
@@ -342,7 +342,6 @@
 
     megax 
     #GUI
-
 #------------------------------------------------------------------------------------------------
 
 
