@@ -273,22 +273,77 @@
 
 #------------------------------------------------------------------------------------------------
 
+#Blastn search
+#------------------------------------------------------------------------------------------------
 
+    https://www.ncbi.nlm.nih.gov/genbank/
+    #Search of .fna files
+    wget
 
+    blastn -query <Fasta file> -subject <fasta file> -evalue 1e-50 -num_alignments 5 -outfmt "7 qseqid sseqid qlen qframe qstart qend slen sframe sstart send pident evalue bitscore length mismatch gapopen" -num_threads 2 -out query_vs_subject.txt
 
+#------------------------------------------------------------------------------------------------
 
+#Mobile genetic element SCCmec search
+#------------------------------------------------------------------------------------------------
 
+    #Download SCCmecfinder
 
+        #https://bitbucket.org/genomicepidemiology/sccmecfinder/src/master/
+        wget https://bitbucket.org/genomicepidemiology/sccmecfinder/src/master/SCCmecFinder_v4.py
+        wget https://bitbucket.org/genomicepidemiology/sccmecfinder/src/master/script_dir/
 
+    #Run SCCmecfinder
+        
+        SCCmecFinder_v4.py [-h] -iDb FASTA_FILE_DB -iKm FASTA_FILE_KM -k ID_THRESHOLD -l LEN_THRESHOLD -o OUTPUT_FILE -d OUTPUT_DIR -db_dir DATABASE_DIR -sc_dir SCRIPT_DIR -db_choice DATABASE_CHOICE
+        #Main command
 
+        python2 SCCmecFinder_v4.py -iDb <Fasta file> -iKm whole_cassette_SCCmec_database_EXTENDED_20171117.fasta -k 0.9 -l 0.6 -o extended1 -d extended1 -db_dir sccmecfinder_db -sc_dir script_dir -db_choice extended
+        #Database extended
 
+        python2 SCCmecFinder_v4.py -iDb <Fasta file> -iKm whole_cassette_SCCmec_database_REFERENCE_20171117.fasta -k 0.9 -l 0.6 -o reference1 -d reference1 -db_dir sccmecfinder_db -sc_dir script_dir -db_choice reference
+        #Database reference
 
+#------------------------------------------------------------------------------------------------
 
+#Pangenome analysis
+#------------------------------------------------------------------------------------------------
 
+    #Genomes search
 
+        https://www.ncbi.nlm.nih.gov/genome/
+        #search of .gff files
+        wget <files>.gff
 
+    #Installing roary
 
+        conda config --add channels r
+        conda config --add channels defaults
+        conda config --add channels conda-forge
+        conda config --add channels bioconda
+        conda install roary
+    
+    #Run roary
 
+        roary -f <name.percentage> -cd <percentage> -e -n -p 12 *.gff
+        cd <name.percentage>
+        FastTree -nt -gtr core_gene_alignment.aln > <name.percetage.netwick>
+        mv core_gene_alignment.aln core_gene_alignment.aln.fasta
+#------------------------------------------------------------------------------------------------
+
+#MEGA analysis
+#------------------------------------------------------------------------------------------------
+    
+    https://www.megasoftware.net/
+
+    megacc <file>.mao
+    megacc –a settings.mao –d alignment.meg –o outFile
+    #CC
+
+    megax 
+    #GUI
+
+#------------------------------------------------------------------------------------------------
 
 
 
