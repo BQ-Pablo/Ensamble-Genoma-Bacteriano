@@ -253,7 +253,7 @@
         #-c reference genome FASTA(.gz) file
     
     #IMPORTANT
-    #Genomic data present in assamled genome and abscent in reference genome can be discarded
+    #Genomic data present in assemled genome and abscent in reference genome can be discarded
 
 #------------------------------------------------------------------------------------------------
 
