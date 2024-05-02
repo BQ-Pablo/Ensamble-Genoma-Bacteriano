@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# Definir función de ayuda
+mostrar_ayuda() {
+    echo "Uso: $0 -r R1_Seq -t R2_Seq -g directorio_raw -b directorio_trimmed [-a adaptador] [-l leading] [-w slidingwindow] [-m minlen] [-v avgqual] [-n threads] [-i maxinfo] [-c crop] [-d headcrop]"
+    echo "Opciones:"
+    echo "  -r  Nombre del archivo R1 (lectura 1)"
+    echo "  -t  Nombre del archivo R2 (lectura 2)"
+    echo "  -g  Directorio de archivos crudos"
+    echo "  -b  Directorio de archivos recortados"
+    echo "  -a  Adaptador utilizado por Trimmomatic (por defecto: NexteraPE-PE.fa)"
+    echo "  -l  Valor para 'leading' en Trimmomatic (por defecto: 20)"
+    echo "  -w  Valor para 'slidingwindow' en Trimmomatic (por defecto: 10:30)"
+    echo "  -m  Valor para 'minlen' en Trimmomatic (por defecto: 50)"
+    echo "  -v  Valor para 'avgqual' en Trimmomatic (por defecto: 25)"
+    echo "  -n  Cantidad de hilos para Trimmomatic (por defecto: 8)"
+    echo "  -i  Valor para 'maxinfo' en Trimmomatic"
+    echo "  -c  Valor para 'crop' en Trimmomatic"
+    echo "  -d  Valor para 'headcrop' en Trimmomatic"
+    echo "  tophred33  Convierte los puntajes de calidad a Phred-33
+    echo "  tophred64  Convierte los puntajes de calidad a Phred-64
+    exit 0
+}
+
+# Obtener argumentos de línea de comandos
+while getopts "r:t:g:b:a:l:w:m:v:n:i:c:d:h" opt; do
+    case $opt in
+        r) R1_Seq=$OPTARG ;;
+        t) R2_Seq=$OPTARG ;;
+        g) raw_files_dir=$OPTARG ;;
+        b) trimmed_files_dir=$OPTARG ;;
+        a) adaptador=$OPTARG ;;
+        l) leading=$OPTARG ;;
+        w) slidingwindow=$OPTARG ;;
+        m) minlen=$OPTARG ;;
+        v) avgqual=$OPTARG ;;
+        n) threads=$OPTARG ;;
+        i) maxinfo=$OPTARG ;;
+        c) crop=$OPTARG ;;
+        d) headcrop=$OPTARG ;;
+        h|help) mostrar_ayuda ;;
+        \?) echo "Opción inválida: -$OPTARG" >&2; mostrar_ayuda ;;
+    esac
+done
+
+# Definir el directorio de los adaptadores
+adaptadores_dir="Downloads/Trimmomatic-0.39/adapters/"
+
+# Chequear argumentos obligatorios
+if [ -z "$R1_Seq" ] || [ -z "$R2_Seq" ] || [ -z "$raw_files_dir" ] || [ -z "$trimmed_files_dir" ]; then
+    echo "Los argumentos -r, -t, -g y -b son obligatorios."
+    mostrar_ayuda
+fi
+
+# Chequear si los archivos y directorios existen
+if [ ! -d "$raw_files_dir" ]; then
+    echo "Directorio de archivos crudos no encontrado: $raw_files_dir"
+    exit 1
+fi
+
+if [ ! -e "$raw_files_dir/$R1_Seq" ] || [ ! -e "$raw_files_dir/$R2_Seq" ]; then
+    echo "Los archivos $R1_Seq y/o $R2_Seq no se encuentran en el directorio $raw_files_dir."
+    exit 1
+fi
+
+# Mensaje de confirmación de los parámetros proporcionados
+echo "Archivos de entrada:"
+echo "  - R1_Seq: $R1_Seq"
+echo "  - R2_Seq: $R2_Seq"
+echo "Directorio de archivos crudos: $raw_files_dir"
+echo "Directorio de archivos recortados: $trimmed_files_dir"
+echo "Parámetros de Trimmomatic:"
+echo "  - Adaptador: ${adaptador:-NexteraPE-PE.fa}"
+echo "  - Leading: ${leading:-20}"
+echo "  - Sliding Window: ${slidingwindow:-10:30}"
+echo "  - Mínimo largo: ${minlen:-50}"
+echo "  - Calidad promedio mínima: ${avgqual:-25}"
+echo "  - Cantidad de hilos: ${threads:-8}"
+echo "  - Maxinfo: $maxinfo"
+echo "  - Crop: $crop"
+echo "  - Headcrop: $headcrop"
+
+# Instalación de herramientas
+echo "Instalando herramientas..."
+conda create -y -n "env_prepross_reads"
+conda activate "env_prepross_reads"
+conda install -y -c conda-forge -c bioconda fastqc multiqc trimmomatic
+
+# Realizar control de calidad inicial de las lecturas crudas
+echo "Realizando control de calidad inicial de las lecturas crudas..."
+fastqc "$raw_files_dir/$R1_Seq" "$raw_files_dir/$R2_Seq"
+multiqc "$raw_files_dir/${R1_Seq}_fastqc.zip" "$raw_files_dir/${R2_Seq}_fastqc.zip"
+
+# Crear directorio para archivos recortados
+mkdir -p "$trimmed_files_dir"
+
+# Búsqueda de adaptadores y copia del adaptador seleccionado
+echo "Buscando adaptador $adaptador en el directorio $adaptadores_dir y copiándolo al directorio de archivos crudos..."
+cp "$adaptadores_dir/$adaptador" "$raw_files_dir/"
+
+# Ejecutar Trimmomatic
+java -jar trimmomatic-0.39.jar PE \
+    -threads "${threads:-8}" \
+    "$raw_files_dir/$R1_Seq" "$raw_files_dir/$R2_Seq" \
+    "$trimmed_files_dir/1P.fastq.gz" "$trimmed_files_dir/1U.fastq.gz" \
+    "$trimmed_files_dir/2P.fastq.gz" "$trimmed_files_dir/2U.fastq.gz" \
+    ILLUMINACLIP:"${adaptador:-NexteraPE-PE.fa}":2:30:10 \
+    LEADING:"${leading:-20}" \
+    TRAILING:"${leading:-20}" \
+    SLIDINGWINDOW:"${slidingwindow:-10:30}" \
+    MINLEN:"${minlen:-50}" \
+    AVGQUAL:"${avgqual:-25}"
+
+# Realizar control de calidad post filtrado
+echo "Realizando control de calidad post filtrado..."
+fastqc "$trimmed_files_dir/1P.fastq.gz" "$trimmed_files_dir/2P.fastq.gz"
+multiqc "$trimmed_files_dir/1P_fastqc.zip" "$trimmed_files_dir/2P_fastqc.zip"
+
